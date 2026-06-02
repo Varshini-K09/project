@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synergy – Resume Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/resumes.css" />
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="s-logomark">
+        <svg viewBox="0 0 16 16"><path d="M3 8l3.5 3.5L13 4"/></svg>
+      </div>
+      <span class="s-logo">Synergy<em>.</em></span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a class="nav-item" href="/api/dashboard/"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a class="nav-item" href="/api/dashboard/"><span class="nav-icon">🙍</span> My Profile</a>
+      <a class="nav-item" href="/api/jobs-page/"><span class="nav-icon">💼</span> Jobs</a>
+      <a class="nav-item" href="/api/dashboard/"><span class="nav-icon">📋</span> Requirements</a>
+      <div class="nav-group-label">Recruitment</div>
+      <a class="nav-item active" href="/api/resumes-page/"><span class="nav-icon">📄</span> Resumes</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-meta">
+          <div class="user-avatar" id="uAvatar">—</div>
+          <div>
+            <div class="user-name" id="uName">—</div>
+            <div class="user-email" id="uEmail">—</div>
+          </div>
+        </div>
+        <span class="role-chip" id="uRole">—</span>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()"><span>↩</span> Sign out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Resume Manager</div>
+        <div class="topbar-sub">Upload and manage candidate resumes</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="filter-select" id="reqFilter" onchange="loadResumes()">
+            <option value="">All Requirements</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px">
+          <!-- ▼ NEW: Bulk Upload button -->
+          <button class="btn btn-secondary" onclick="openBulkModal()">⇪ Bulk Upload ZIP</button>
+          <button class="btn btn-primary" onclick="openUploadModal()">+ Upload Resume</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="resumeTable">
+          <div class="loading">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Upload Modal ── -->
+  <div class="overlay" id="uploadOverlay">
+    <div class="modal">
+      <div class="modal-title">Upload Candidate Resume</div>
+      <div class="grid2">
+        <div class="fg"><label class="fl">Candidate Name *</label><input class="fi" id="uCandName" placeholder="Full name" /></div>
+        <div class="fg"><label class="fl">Candidate Email</label><input class="fi" id="uCandEmail" type="email" placeholder="candidate@email.com" /></div>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label class="fl">Phone</label><input class="fi" id="uCandPhone" placeholder="+91 …" /></div>
+        <div class="fg"><label class="fl">Requirement</label><select class="fs" id="uReq"></select></div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="ft" id="uNotes" placeholder="Any notes about this candidate…" style="min-height:60px"></textarea></div>
+      <div class="fg">
+        <label class="fl">Resume PDF *</label>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" accept=".pdf" onchange="handleFileSelect(event)" />
+          <div class="drop-zone-icon">📎</div>
+          <div class="drop-zone-text">Click to browse or drag & drop PDF</div>
+          <div class="drop-zone-hint">Only PDF files · Max 10 MB</div>
+          <div class="file-chosen" id="fileChosen" style="display:none"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeOverlay('uploadOverlay')">Cancel</button>
+        <button class="btn btn-primary" onclick="uploadResume()" id="uploadBtn">Upload Resume</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bulk Upload Modal (NEW) ── -->
+  <div class="overlay" id="bulkOverlay">
+    <div class="modal">
+      <div class="modal-title">Bulk Upload Resumes via ZIP</div>
+      <div class="fg">
+        <label class="fl">Requirement *</label>
+        <select class="fs" id="bulkReq"></select>
+      </div>
+      <div class="fg">
+        <label class="fl">ZIP File *</label>
+        <div class="drop-zone" id="bulkDropZone" onclick="document.getElementById('bulkFileInput').click()"
+          ondragover="handleBulkDragOver(event)" ondragleave="handleBulkDragLeave(event)" ondrop="handleBulkDrop(event)">
+          <input type="file" id="bulkFileInput" accept=".zip" onchange="handleBulkFileSelect(event)" />
+          <div class="drop-zone-icon">🗜️</div>
+          <div class="drop-zone-text">Click to browse or drag & drop ZIP</div>
+          <div class="drop-zone-hint">ZIP must contain PDF resumes · No size limit</div>
+          <div class="file-chosen" id="bulkFileChosen" style="display:none"></div>
+        </div>
+      </div>
+      <!-- Progress / status area -->
+      <div id="bulkStatus" style="display:none;margin-top:12px;padding:12px 14px;border-radius:var(--radius-md);font-size:13px;line-height:1.6"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeOverlay('bulkOverlay')" id="bulkCancelBtn">Cancel</button>
+        <button class="btn btn-primary" onclick="uploadBulk()" id="bulkUploadBtn">Upload &amp; Screen All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PDF Viewer Modal ── -->
+  <div class="overlay" id="pdfOverlay">
+    <div class="modal modal-wide">
+      <div class="modal-title" id="pdfModalTitle">Resume</div>
+      <iframe class="pdf-viewer-frame" id="pdfFrame" src=""></iframe>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeOverlay('pdfOverlay')">Close</button>
+        <a id="pdfDownloadLink" href="#" download class="btn btn-primary" style="text-decoration:none">⬇ Download</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Schedule Interview Modal ── -->
+  <div class="overlay" id="scheduleOverlay">
+    <div class="modal">
+      <div class="modal-title">Schedule Interview</div>
+      <input type="hidden" id="sResumeId" />
+      <div class="fg">
+        <label class="fl">Candidate</label>
+        <input class="fi" id="sCandName" readonly style="background:var(--bg);color:var(--sub)" />
+      </div>
+      <div class="fg">
+        <label class="fl">Requirement</label>
+        <input class="fi" id="sReqTitle" readonly style="background:var(--bg);color:var(--sub)" />
+      </div>
+      <div class="grid2">
+        <div class="fg">
+          <label class="fl">Date &amp; Time *</label>
+          <input class="fi" type="datetime-local" id="sDateTime" />
+        </div>
+        <div class="fg">
+          <label class="fl">Venue / Link</label>
+          <input class="fi" id="sVenue" placeholder="Room 4B or https://meet.google.com/…" />
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Internal Notes (not sent to candidate)</label>
+        <textarea class="ft" id="sNotes" placeholder="Interviewer instructions, topics to cover…" style="min-height:64px"></textarea>
+      </div>
+      <div class="fg" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--indigo-light);border:1px solid var(--indigo-border);border-radius:var(--radius-md)">
+        <input type="checkbox" id="sSendEmail" style="accent-color:var(--indigo);width:16px;height:16px" />
+        <label for="sSendEmail" style="font-size:13px;color:var(--indigo-dark);font-weight:600;cursor:pointer">
+          Send invite email to candidate's Mailinator inbox
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeOverlay('scheduleOverlay')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveInterview()" id="saveInterviewBtn">Schedule Interview</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/js/resumes.js"></script>
+</body>
+</html>

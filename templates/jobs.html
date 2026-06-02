@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Synergy – Open Positions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/jobs.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-left">
+    <div class="logo">Synergy<span>.</span></div>
+    <span class="nav-tag">Internal Careers</span>
+  </div>
+  <div class="nav-right">
+    <span class="job-count-badge" id="navCount"></span>
+    <span class="nav-user" id="navUser"></span>
+    <a href="/api/dashboard/" class="btn-back">← Dashboard</a>
+    <button class="btn-logout" onclick="handleLogout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="hero-banner">
+  <h1>Internal Open Positions</h1>
+  <p>Browse approved job openings across all departments. These listings are visible to Synergy employees only.</p>
+  <div class="search-wrap">
+    <span class="search-icon">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
+    </span>
+    <input class="search-input" type="text" id="searchInput" placeholder="Search by role, skill, or department…" oninput="filterJobs()"/>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- Filters -->
+  <aside class="filters-col">
+    <div class="filter-card">
+      <div class="filter-card-head">Filters <button class="filter-reset" onclick="resetFilters()">Reset all</button></div>
+      <div class="filter-section">
+        <div class="filter-section-label">Department</div>
+        <div id="deptFilters">
+          <label class="filter-option"><input type="radio" name="dept" value="" checked onchange="filterJobs()"> All Departments</label>
+        </div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-section-label">Work Mode</div>
+        <label class="filter-option"><input type="radio" name="workmode" value="" checked onchange="filterJobs()"> All</label>
+        <label class="filter-option"><input type="radio" name="workmode" value="Remote" onchange="filterJobs()"> Remote</label>
+        <label class="filter-option"><input type="radio" name="workmode" value="On-site" onchange="filterJobs()"> On-site</label>
+        <label class="filter-option"><input type="radio" name="workmode" value="Hybrid" onchange="filterJobs()"> Hybrid</label>
+      </div>
+      <div class="filter-section">
+        <div class="filter-section-label">Employment Type</div>
+        <label class="filter-option"><input type="radio" name="emptype" value="" checked onchange="filterJobs()"> All</label>
+        <label class="filter-option"><input type="radio" name="emptype" value="Full-time" onchange="filterJobs()"> Full-time</label>
+        <label class="filter-option"><input type="radio" name="emptype" value="Part-time" onchange="filterJobs()"> Part-time</label>
+        <label class="filter-option"><input type="radio" name="emptype" value="Contract" onchange="filterJobs()"> Contract</label>
+        <label class="filter-option"><input type="radio" name="emptype" value="Internship" onchange="filterJobs()"> Internship</label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Job list -->
+  <main class="list-col">
+    <div class="list-header">
+      <span class="list-count" id="listCount">Loading…</span>
+    </div>
+    <div class="job-list" id="jobList">
+      <div class="state-box"><div class="spinner"></div>Loading open positions…</div>
+    </div>
+  </main>
+
+  <!-- Detail panel -->
+  <aside class="detail-col" id="detailCol">
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-empty">
+        <span class="detail-empty-icon">💼</span>
+        <p>Select a job from the list<br/>to see full details here.</p>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<footer class="page-footer">© 2025 Synergy Recruitment · Internal use only · Visible to authenticated employees only</footer>
+
+<script src="/static/js/jobs.js"></script>
+</body>
+</html>

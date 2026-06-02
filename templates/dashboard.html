@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Synergy – Dashboard</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/dashboard.css" />
+    <link rel="stylesheet" href="/static/css/kanban-styles.css">
+</head>
+
+<body>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="s-logomark">
+                <svg viewBox="0 0 16 16">
+                    <path d="M3 8l3.5 3.5L13 4" />
+                </svg>
+            </div>
+            <span class="s-logo">Synergy<em>.</em></span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-group-label">Overview</div>
+            <div class="nav-item active" onclick="showView('home')" id="nav-home">
+                <span class="nav-icon">⊞</span> Dashboard
+            </div>
+            <div class="nav-item" onclick="showView('profile')" id="nav-profile">
+                <span class="nav-icon">🙍</span> My Profile
+            </div>
+            <div class="nav-item" onclick="window.location.href='/api/jobs-page/'" id="nav-jobs">
+                <span class="nav-icon">💼</span> Browse Jobs
+            </div>
+            <div class="nav-item" onclick="showView('requirements')" id="nav-requirements">
+                <span class="nav-icon">📋</span> Requirements
+            </div>
+
+            <div id="mgmtSection" style="display:none">
+                <div class="nav-group-label">Management</div>
+                <div class="nav-item" onclick="showView('employees')" id="nav-employees">
+                    <span class="nav-icon">👤</span> Employees
+                </div>
+                <div class="nav-group-label">Recruitment</div>
+                <a class="nav-item" href="/api/resumes-page/" id="nav-resumes">
+                    <span class="nav-icon">📄</span> Resumes
+                </a>
+                <div class="nav-item" onclick="showView('interviews')" id="nav-interviews">
+                    <span class="nav-icon">📅</span> Interviews
+                </div>
+                <div class="nav-item" onclick="showView('kanban')" id="nav-kanban">
+                    <span class="nav-icon">🗂</span> Kanban Pipeline
+                </div>
+            </div>
+
+            <div id="adminSection" style="display:none">
+                <div class="nav-group-label">Administration</div>
+                <div class="nav-item" onclick="showView('departments')" id="nav-departments">
+                    <span class="nav-icon">🏢</span> Departments
+                </div>
+                <div class="nav-item" onclick="showView('roles')" id="nav-roles">
+                    <span class="nav-icon">🔑</span> Roles
+                </div>
+                <div class="nav-item" onclick="showView('skills')" id="nav-skills">
+                    <span class="nav-icon">⚡</span> Skills
+                </div>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-meta">
+                    <div class="user-avatar" id="uAvatar">—</div>
+                    <div style="min-width:0">
+                        <div class="user-name" id="uName">—</div>
+                        <div class="user-email" id="uEmail">—</div>
+                    </div>
+                </div>
+                <span class="role-chip" id="uRole">—</span>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()"><span>↩</span> Sign out</button>
+        </div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-title" id="tbTitle">Dashboard</div>
+                <div class="topbar-sub" id="tbSub">Welcome back</div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- ===================== HOME ===================== -->
+            <div class="view active" id="view-home">
+
+                <!-- Requirements stat boxes (always visible) -->
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-val blue" id="sTot">—</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Pending</div>
+                        <div class="stat-val warn" id="sPend">—</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Approved</div>
+                        <div class="stat-val green" id="sApp">—</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Rejected</div>
+                        <div class="stat-val red" id="sRej">—</div>
+                    </div>
+                </div>
+
+                <!-- Interview email stats card (admin/hr only — filled by JS) -->
+                <div id="emailStatsSection"></div>
+
+                <!-- Recent Requirements table -->
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-head-title">Recent Requirements</span>
+                    </div>
+                    <div id="recentTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+
+                <!-- Pending email candidates card (admin/hr only — filled by JS) -->
+                <div class="card" style="margin-top:16px">
+                    <div id="pendingEmailTable"></div>
+                </div>
+
+                <!-- Kanban pipeline stage counts + per-requirement breakdown (admin/hr only — filled by JS) -->
+                <div id="kbStatsSection"></div>
+
+            </div>
+            <!-- /view-home -->
+
+            <!-- ===================== PROFILE ===================== -->
+            <div class="view" id="view-profile">
+                <div class="profile-wrap">
+                    <div id="profileContent">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== REQUIREMENTS ===================== -->
+            <div class="view" id="view-requirements">
+                <div class="view-toolbar">
+                    <div></div>
+                    <button class="btn btn-blue" onclick="openReqModal()">+ New Requirement</button>
+                </div>
+                <div class="card">
+                    <div id="reqTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== EMPLOYEES ===================== -->
+            <div class="view" id="view-employees">
+                <div class="view-toolbar">
+                    <div></div>
+                    <button class="btn btn-blue" onclick="openEmpModal()">+ Add Employee</button>
+                </div>
+                <div class="card">
+                    <div id="empTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== DEPARTMENTS ===================== -->
+            <div class="view" id="view-departments">
+                <div class="view-toolbar">
+                    <div></div>
+                    <button class="btn btn-blue" onclick="openDeptModal()">+ Add Department</button>
+                </div>
+                <div class="card">
+                    <div id="deptTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== ROLES ===================== -->
+            <div class="view" id="view-roles">
+                <div class="view-toolbar">
+                    <div></div>
+                    <button class="btn btn-blue" onclick="openRoleModal()">+ Add Role</button>
+                </div>
+                <div class="card">
+                    <div id="roleTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== SKILLS ===================== -->
+            <div class="view" id="view-skills">
+                <div class="view-toolbar">
+                    <div></div>
+                    <button class="btn btn-blue" onclick="openSkillModal()">+ Add Skill</button>
+                </div>
+                <div class="card">
+                    <div id="skillTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== INTERVIEWS ===================== -->
+            <div class="view" id="view-interviews">
+                <div class="card">
+                    <div class="card-head">
+                        <span class="card-head-title">Shortlisted Candidates – Interview Schedule</span>
+                    </div>
+                    <div id="interviewTable">
+                        <div class="loading">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== KANBAN PIPELINE ===================== -->
+            <div class="view" id="view-kanban">
+                <div class="kb-toolbar">
+                    <select id="kbReqFilter" onchange="loadKanban()" style="min-width:220px">
+                        <option value="">All Requirements</option>
+                    </select>
+                    <input id="kbSearch" type="text" placeholder="🔍  Search candidate…" oninput="renderKanban()"
+                        style="min-width:200px" />
+                    <span class="kb-info-badge" id="kbRoleBadge">Loading…</span>
+                </div>
+                <div class="kanban-wrap" id="kanbanBoard"></div>
+            </div>
+            <!-- /view-kanban -->
+
+        </div><!-- /content -->
+    </div><!-- /main -->
+
+    <!-- ===================== MODALS ===================== -->
+
+    <!-- Requirement Modal -->
+    <div class="overlay" id="reqOverlay">
+        <div class="modal">
+            <div class="modal-title" id="reqMTitle">New Requirement</div>
+            <input type="hidden" id="reqId" />
+            <div class="fg"><label class="fl">Job Title *</label><input class="fi" id="reqTitle"
+                    placeholder="e.g. Senior Django Developer" /></div>
+            <div class="grid2">
+                <div class="fg"><label class="fl">Department</label><select class="fs" id="reqDept"></select></div>
+                <div class="fg"><label class="fl">Vacancies</label><input class="fi" id="reqVac" type="number" min="1"
+                        placeholder="1" /></div>
+                <div class="fg"><label class="fl">Experience Required</label><input class="fi" id="reqExp"
+                        placeholder="e.g. 2–4 years" /></div>
+                <div class="fg"><label class="fl">Location</label><input class="fi" id="reqLoc"
+                        placeholder="e.g. Hyderabad" /></div>
+                <div class="fg"><label class="fl">Employment Type</label>
+                    <select class="fs" id="reqEType">
+                        <option value="">Select</option>
+                        <option>Full-time</option>
+                        <option>Part-time</option>
+                        <option>Contract</option>
+                        <option>Internship</option>
+                    </select>
+                </div>
+                <div class="fg"><label class="fl">Work Mode</label>
+                    <select class="fs" id="reqWMode">
+                        <option value="">Select</option>
+                        <option>On-site</option>
+                        <option>Remote</option>
+                        <option>Hybrid</option>
+                    </select>
+                </div>
+            </div>
+            <div class="fg"><label class="fl">Salary Range</label><input class="fi" id="reqSal"
+                    placeholder="e.g. 8–12 LPA" /></div>
+            <div class="fg"><label class="fl">Required Skills</label>
+                <div class="checkbox-list" id="skillBoxes"></div>
+            </div>
+            <div class="fg"><label class="fl">Request New Skill (not in list)</label><input class="fi" id="reqNewSkill"
+                    placeholder="e.g. Rust" /></div>
+            <div class="fg"><label class="fl">Job Description</label><textarea class="ft" id="reqJD"
+                    placeholder="Describe the role and responsibilities…"></textarea></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('reqOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="saveReq()">Save Requirement</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Review Modal -->
+    <div class="overlay" id="statusOverlay">
+        <div class="modal">
+            <div class="modal-title">Review Requirement</div>
+            <input type="hidden" id="sReqId" />
+            <div class="fg"><label class="fl">Decision</label>
+                <select class="fs" id="sDecision">
+                    <option value="approved">Approve</option>
+                    <option value="rejected">Reject</option>
+                </select>
+            </div>
+            <div class="fg"><label class="fl">Comments for requester</label><textarea class="ft" id="sComments"
+                    placeholder="Optional notes…"></textarea></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('statusOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="submitStatus()">Submit Review</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Employee Modal -->
+    <div class="overlay" id="empOverlay">
+        <div class="modal">
+            <div class="modal-title">Add Employee</div>
+            <div class="grid2">
+                <div class="fg"><label class="fl">Employee ID *</label><input class="fi" id="eId"
+                        placeholder="EMP001" /></div>
+                <div class="fg"><label class="fl">Full Name *</label><input class="fi" id="eName"
+                        placeholder="Full name" /></div>
+            </div>
+            <div class="fg"><label class="fl">Company Email *</label><input class="fi" id="eEmail" type="email"
+                    placeholder="name@synergy.com" /></div>
+            <div class="fg"><label class="fl">Phone Number</label><input class="fi" id="ePhone"
+                    placeholder="10-digit number" /></div>
+            <div class="fg"><label class="fl">Password *</label><input class="fi" id="ePw" type="password"
+                    placeholder="Min 8 chars, upper, lower, digit, special" /></div>
+            <div class="grid2">
+                <div class="fg"><label class="fl">Department</label><select class="fs" id="eDept"></select></div>
+                <div class="fg"><label class="fl">Role</label><select class="fs" id="eRole"></select></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('empOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="saveEmp()">Add Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Detail Modal -->
+    <div class="overlay" id="empDetailOverlay">
+        <div class="modal emp-detail-modal">
+            <div id="empDetailContent">
+                <div class="loading">Loading…</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('empDetailOverlay')">Close</button>
+                <button class="btn btn-blue" id="empDetailVerifyBtn" style="display:none"
+                    onclick="verifyEmpFromDetail()">✓ Verify Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Modal -->
+    <div class="overlay" id="deptOverlay">
+        <div class="modal">
+            <div class="modal-title" id="dMTitle">Add Department</div>
+            <input type="hidden" id="dId" />
+            <div class="fg"><label class="fl">Department Name *</label><input class="fi" id="dName"
+                    placeholder="e.g. Engineering" /></div>
+            <div class="fg"><label class="fl">Description</label><input class="fi" id="dDesc"
+                    placeholder="Short description" /></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('deptOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="saveDept()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Modal -->
+    <div class="overlay" id="roleOverlay">
+        <div class="modal">
+            <div class="modal-title" id="rMTitle">Add Role</div>
+            <input type="hidden" id="rId" />
+            <div class="fg"><label class="fl">Role Name *</label><input class="fi" id="rName"
+                    placeholder="e.g. Recruiter" /></div>
+            <div class="fg"><label class="fl">Description</label><input class="fi" id="rDesc"
+                    placeholder="Short description" /></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('roleOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="saveRole()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill Modal -->
+    <div class="overlay" id="skillOverlay">
+        <div class="modal">
+            <div class="modal-title" id="skMTitle">Add Skill</div>
+            <input type="hidden" id="skId" />
+            <div class="fg"><label class="fl">Skill Name *</label><input class="fi" id="skName"
+                    placeholder="e.g. Python" /></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('skillOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="saveSkill()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban: Candidate detail / stage change modal -->
+    <div class="overlay" id="kbDetailOverlay">
+        <div class="modal kb-detail-panel">
+            <div id="kbDetailContent">
+                <div class="loading">Loading…</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('kbDetailOverlay')">Close</button>
+                <button class="btn btn-blue" id="kbSaveStageBtn" onclick="saveCardStage()" style="display:none">
+                    Save Stage
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban: JD Edit modal -->
+    <div class="overlay" id="jdEditOverlay">
+        <div class="modal jd-modal">
+            <div class="modal-title" id="jdEditTitle">Edit Job Description</div>
+            <input type="hidden" id="jdEditReqId" />
+            <div class="fg">
+                <label class="fl">Job Description</label>
+                <textarea class="ft" id="jdEditText" rows="12"
+                    placeholder="Enter the full job description…"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" onclick="closeOverlay('jdEditOverlay')">Cancel</button>
+                <button class="btn btn-blue" onclick="saveJD()">Save JD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban: Schedule Interview modal -->
+    <div class="overlay" id="kbScheduleOverlay">
+        <div class="modal">
+            <div class="modal-title">📅 Schedule Interview</div>
+            <input type="hidden" id="kbSResumeId" />
+            <div class="fg">
+                <label class="fl">Candidate</label>
+                <input class="fi" id="kbSCandName" readonly />
+            </div>
+            <div class="fg">
+                <label class="fl">Requirement</label>
+                <input class="fi" id="kbSReqTitle" readonly />
+            </div>
+            <div class="grid2">
+                <div class="fg">
+                    <label class="fl">Date &amp; Time *</label>
+                    <input class="fi" id="kbSDateTime" type="datetime-local" />
+                </div>
+                <div class="fg">
+                    <label class="fl">Venue / Link</label>
+                    <input class="fi" id="kbSVenue" placeholder="Room 4B or https://meet.google…" />
+                </div>
+            </div>
+            <div class="fg">
+                <label class="fl">Internal Notes (not sent to candidate)</label>
+                <textarea class="ft" id="kbSNotes"
+                    placeholder="Interviewer instructions, topics to cover…"></textarea>
+            </div>
+            <div class="fg"
+                style="background:#ede9fe;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+                <input type="checkbox" id="kbSSendEmail" checked
+                    style="width:16px;height:16px;accent-color:#6366f1" />
+                <label for="kbSSendEmail"
+                    style="font-size:13px;font-weight:500;color:#4f46e5;cursor:pointer">
+                    Send invite email to candidate's Mailinator inbox
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost"
+                    onclick="closeOverlay('kbScheduleOverlay'); _kbRevertDrag()">Cancel</button>
+                <button class="btn btn-blue" id="kbSaveInterviewBtn" onclick="kbSaveInterview()">
+                    Schedule Interview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/js/dashboard.js"></script>
+    <!-- Kanban script — must come after dashboard.js -->
+    <script src="/static/js/kanban.js"></script>
+
+</body>
+
+</html>

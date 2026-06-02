@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synergy Recruitment – Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/login.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <span class="topbar-logo">Synergy<span>.</span></span>
+    <div class="topbar-divider"></div>
+    <span class="topbar-label">Recruitment Portal</span>
+  </div>
+
+  <div class="center">
+    <div class="card">
+      <div class="card-title">Sign in</div>
+      <div class="card-sub">Use your Synergy company email to access the portal.</div>
+
+      <!-- Shown when user lands here after signing out -->
+      <div class="signout-banner" id="signoutBanner">
+        ✓ You have been signed out successfully.
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" placeholder="yourname@synergy.com" autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+          <button class="pw-toggle" id="pwToggle" type="button">Show</button>
+        </div>
+      </div>
+
+      <button class="btn-signin" id="signinBtn" onclick="handleLogin()">
+        Sign in
+      </button>
+    </div>
+  </div>
+
+  <footer>© 2025 Synergy. Internal use only.</footer>
+
+  <script src="/static/js/login.js"></script>
+</body>
+</html>
