@@ -26,7 +26,7 @@ def _call_groq(prompt: str, max_tokens: int = 1024) -> str:
 
     client = Groq(api_key=api_key)
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",   # fast + free tier, change to llama-3.1-8b-instant for higher volume
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
         temperature=0.0,
@@ -51,8 +51,11 @@ RESUME:
     try:
         raw = _call_groq(prompt, max_tokens=200)
         raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
-        return json.loads(raw)
-    except Exception:
+        result = json.loads(raw)
+        print(f"DEBUG extract_candidate_info SUCCESS: {result}")
+        return result
+    except Exception as e:
+        print(f"DEBUG extract_candidate_info ERROR: {e}")  # ← added
         return {"candidate_name": "Unknown", "candidate_email": "", "candidate_phone": ""}
 
 

@@ -1,4 +1,5 @@
-from datetime import time
+import time                           # ← standard library time module (for time.sleep)
+from datetime import datetime         # ← keep only what you need from datetime
 import os
 import io
 import zipfile
@@ -239,7 +240,7 @@ class BulkResumeUploadView(APIView):
                     # ── Extract text ──────────────────────────────────────
                     resume_text = _extract_text_from_pdf(pdf_io)
 
-                    # ── Extract candidate info with retry ─────────────────
+                    # ── Extract candidate info ────────────────────────────
                     info = _extract_with_retry(resume_text)
                     print(f"DEBUG bulk [{pdf_name}] contact info: {info}")
 
@@ -255,12 +256,15 @@ class BulkResumeUploadView(APIView):
                     )
                     resume.save()
 
-                    # ── Small delay between resumes to avoid rate limiting ─
+                    # ── Wait before screening to avoid rate limit ─────────
+                    # Groq free tier: 6000 tokens/min. Screening uses ~1500 tokens.
+                    # So max ~4 screenings/min safely → wait 15s between each.
                     if index > 0:
-                        time.sleep(2)  # 2 seconds between each resume
+                        print(f"DEBUG waiting 15s before screening [{pdf_name}]...")
+                        time.sleep(15)
 
-                    # ── Run screening ─────────────────────────────────────
-                    result = screen_resume(resume, resume_text=resume_text)
+                    # ── Run screening with retry ──────────────────────────
+                    result = _screen_with_retry(resume, resume_text)
 
                     results.append({
                         "file":                  pdf_name,
@@ -287,15 +291,34 @@ class BulkResumeUploadView(APIView):
 
 
 def _extract_with_retry(resume_text: str, retries: int = 3) -> dict:
-    """Extract candidate info with retry on rate limit errors."""
+    """Extract candidate info with retry on failure."""
     for attempt in range(retries):
         info = extract_candidate_info(resume_text)
-        # If we got real data back, return it
         if info.get("candidate_name") and info["candidate_name"] != "Unknown":
             return info
-        # If it returned Unknown, wait and retry (likely a rate limit hit)
         if attempt < retries - 1:
-            wait = 5 * (attempt + 1)  # 5s, 10s, 15s
+            wait = 5 * (attempt + 1)
             print(f"DEBUG contact info returned Unknown, retrying in {wait}s (attempt {attempt+1})")
             time.sleep(wait)
-    return info  # return whatever we have after retries
+    return info
+
+
+def _screen_with_retry(resume, resume_text: str, retries: int = 3) -> dict:
+    """Run screening with retry on rate limit errors."""
+    for attempt in range(retries):
+        try:
+            result = screen_resume(resume, resume_text=resume_text)
+            if result.get("score", 0) > 0:
+                return result
+            # score=0 with a Groq error message → retry
+            if "Groq API error" in result.get("summary", ""):
+                raise Exception(result["summary"])
+            return result
+        except Exception as exc:
+            if attempt < retries - 1:
+                wait = 20 * (attempt + 1)  # 20s, 40s, 60s
+                print(f"DEBUG screening failed for {resume.candidate_name}, retrying in {wait}s: {exc}")
+                time.sleep(wait)
+            else:
+                print(f"DEBUG screening gave up after {retries} attempts: {exc}")
+                return {"score": 0, "summary": str(exc)}

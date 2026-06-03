@@ -96,7 +96,13 @@ body {
 .btn-outline.red:hover { border-color: var(--red-border); color: var(--red); background: var(--red-bg); }
 
 /* ── Cards / Toolbar ── */
-.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs); }
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;          /* ← allows horizontal scroll instead of clipping */
+  box-shadow: var(--shadow-xs);
+}
 .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
 .toolbar-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
@@ -105,11 +111,24 @@ body {
 .filter-select:focus { border-color: var(--indigo); }
 
 /* ── Table ── */
-table { width: 100%; border-collapse: collapse; }
-th { text-align: left; padding: 11px 20px; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--border); }
-td { padding: 14px 20px; font-size: 13.5px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 860px; }
+th { text-align: left; padding: 11px 14px; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--border); overflow: hidden; }
+td { padding: 14px 14px; font-size: 13.5px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; overflow: hidden; }
 tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: #fafbff; }
+
+/* ── Column widths ── */
+th:nth-child(1), td:nth-child(1) { width: 155px; } /* Candidate */
+th:nth-child(2), td:nth-child(2) { width: 175px; } /* Contact   */
+th:nth-child(3), td:nth-child(3) { width: 140px; } /* Req       */
+th:nth-child(4), td:nth-child(4) { width: 115px; } /* Resume    */
+th:nth-child(5), td:nth-child(5) { width: 85px;  } /* Screening */
+th:nth-child(6), td:nth-child(6) { width: 90px;  } /* Uploaded  */
+th:nth-child(7), td:nth-child(7) { width: 190px; } /* Actions   — always visible */
+
+/* Clip overflowing text in data cells */
+td:nth-child(1) > div,
+td:nth-child(2) > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
 /* ── Badge ── */
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
@@ -172,7 +191,7 @@ tbody tr:hover td { background: #fafbff; }
 .spinner-sm { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(79,70,229,.3); border-top-color: var(--indigo); border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 5px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.req-badge { display: inline-block; background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-badge { display: inline-block; background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 2px; }
 .chip-green { background: var(--green-bg); color: #065f46; border: 1px solid var(--green-border); }
