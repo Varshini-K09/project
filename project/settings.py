@@ -21,8 +21,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ── API Keys ──────────────────────────────────────────────────────────────────
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-
+# ── API Keys ──────────────────────────────────────────────────────────────────
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 # ── Media files (uploaded resumes) ───────────────────────────────────────────
 MEDIA_URL  = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

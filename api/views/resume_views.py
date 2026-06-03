@@ -1,3 +1,4 @@
+from datetime import time
 import os
 import io
 import zipfile
@@ -230,36 +231,42 @@ class BulkResumeUploadView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            for pdf_name in pdf_names:
+            for index, pdf_name in enumerate(pdf_names):
                 try:
                     pdf_bytes   = zf.read(pdf_name)
                     pdf_io      = io.BytesIO(pdf_bytes)
 
-                    # ── Extract text & candidate info in memory ───────────
+                    # ── Extract text ──────────────────────────────────────
                     resume_text = _extract_text_from_pdf(pdf_io)
-                    info        = extract_candidate_info(resume_text)
 
-                    # ── Save record WITHOUT storing the file ──────────────
+                    # ── Extract candidate info with retry ─────────────────
+                    info = _extract_with_retry(resume_text)
+                    print(f"DEBUG bulk [{pdf_name}] contact info: {info}")
+
+                    # ── Save record ───────────────────────────────────────
                     resume = Resume(
                         requirement     = requirement,
-                        candidate_name  = info.get("candidate_name", "Unknown"),
-                        candidate_email = info.get("candidate_email", ""),
-                        candidate_phone = info.get("candidate_phone", ""),
+                        candidate_name  = info.get("candidate_name") or "Unknown",
+                        candidate_email = info.get("candidate_email") or "",
+                        candidate_phone = info.get("candidate_phone") or "",
                         uploaded_by     = request.user,
                         is_active       = True,
-                        # Store original filename in notes for reference
                         notes           = f"[Bulk upload] {os.path.basename(pdf_name)}",
-                        # resume_file intentionally left blank
                     )
-                    resume.save()   # ← no resume_file.save() at all
+                    resume.save()
 
-                    # ── Run screening on the in-memory text ───────────────
+                    # ── Small delay between resumes to avoid rate limiting ─
+                    if index > 0:
+                        time.sleep(2)  # 2 seconds between each resume
+
+                    # ── Run screening ─────────────────────────────────────
                     result = screen_resume(resume, resume_text=resume_text)
 
                     results.append({
                         "file":                  pdf_name,
                         "candidate_name":        resume.candidate_name,
                         "candidate_email":       resume.candidate_email,
+                        "candidate_phone":       resume.candidate_phone,
                         "score":                 result.get("score"),
                         "hiring_recommendation": result.get("hiring_recommendation"),
                         "resume_id":             resume.pk,
@@ -277,3 +284,18 @@ class BulkResumeUploadView(APIView):
             },
             status=status.HTTP_207_MULTI_STATUS if errors else status.HTTP_200_OK,
         )
+
+
+def _extract_with_retry(resume_text: str, retries: int = 3) -> dict:
+    """Extract candidate info with retry on rate limit errors."""
+    for attempt in range(retries):
+        info = extract_candidate_info(resume_text)
+        # If we got real data back, return it
+        if info.get("candidate_name") and info["candidate_name"] != "Unknown":
+            return info
+        # If it returned Unknown, wait and retry (likely a rate limit hit)
+        if attempt < retries - 1:
+            wait = 5 * (attempt + 1)  # 5s, 10s, 15s
+            print(f"DEBUG contact info returned Unknown, retrying in {wait}s (attempt {attempt+1})")
+            time.sleep(wait)
+    return info  # return whatever we have after retries

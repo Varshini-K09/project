@@ -16,9 +16,27 @@ def _extract_text_from_pdf(file_field) -> str:
         return f"[PDF extraction failed: {exc}]"
 
 
+def _call_groq(prompt: str, max_tokens: int = 1024) -> str:
+    """Call Groq API and return the response text."""
+    from groq import Groq
+
+    api_key = getattr(settings, "GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
+    if not api_key:
+        raise ValueError("GROQ_API_KEY not configured.")
+
+    client = Groq(api_key=api_key)
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",   # fast + free tier, change to llama-3.1-8b-instant for higher volume
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=max_tokens,
+        temperature=0.0,
+    )
+    return response.choices[0].message.content.strip()
+
+
 def extract_candidate_info(resume_text: str) -> dict:
-    """Use LLM to extract name/email/phone from resume text."""
-    api_key = getattr(settings, "GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+    """Use Groq LLM to extract name/email/phone from resume text."""
+    api_key = getattr(settings, "GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
     if not api_key:
         return {"candidate_name": "Unknown", "candidate_email": "", "candidate_phone": ""}
 
@@ -31,10 +49,8 @@ RESUME:
 {resume_text[:3000]}"""
 
     try:
-        from google import genai
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(model="gemini-2.5-flash-lite", contents=prompt)
-        raw = re.sub(r"^```(?:json)?|```$", "", response.text.strip(), flags=re.MULTILINE).strip()
+        raw = _call_groq(prompt, max_tokens=200)
+        raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
         return json.loads(raw)
     except Exception:
         return {"candidate_name": "Unknown", "candidate_email": "", "candidate_phone": ""}
@@ -148,14 +164,14 @@ def screen_resume(resume, resume_text: str = None) -> dict:
     "summary": "<3-4 sentence verdict covering overall fit, key strengths, and main gaps. Be direct and opinionated — a recruiter reading this should immediately know whether to proceed.>"
     }}"""
 
-    # ── 4. Call Gemini API ─────────────────────────────────────────────────
-    api_key = getattr(settings, "GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+    # ── 4. Call Groq API ───────────────────────────────────────────────────
+    api_key = getattr(settings, "GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
     if not api_key:
         result = {
             "score":   0,
             "matched": [],
             "missing": skill_names,
-            "summary": "Screening unavailable: GEMINI_API_KEY not configured.",
+            "summary": "Screening unavailable: GROQ_API_KEY not configured.",
         }
         resume.screening_result = result
         resume.screening_done   = True
@@ -163,21 +179,15 @@ def screen_resume(resume, resume_text: str = None) -> dict:
         return result
 
     try:
-        from google import genai
-        client   = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
-        )
-        raw = response.text.strip()
+        raw = _call_groq(prompt, max_tokens=1500)
         print(f"DEBUG screening - raw response: {raw[:300]}")
     except Exception as exc:
-        print(f"DEBUG screening - GEMINI ERROR: {exc}")
+        print(f"DEBUG screening - GROQ ERROR: {exc}")
         result = {
             "score":   0,
             "matched": [],
             "missing": skill_names,
-            "summary": f"Gemini API error: {exc}",
+            "summary": f"Groq API error: {exc}",
         }
         resume.screening_result = result
         resume.screening_done   = True
@@ -186,10 +196,8 @@ def screen_resume(resume, resume_text: str = None) -> dict:
 
     # ── 5. Parse the JSON response ─────────────────────────────────────────
     try:
-        # Strip any accidental ```json fences
         raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
         result = json.loads(raw)
-        # Validate / normalise
         result["score"]   = max(0, min(100, int(result.get("score", 0))))
         result["matched"] = list(result.get("matched", []))
         result["missing"] = list(result.get("missing", []))
@@ -206,4 +214,4 @@ def screen_resume(resume, resume_text: str = None) -> dict:
     resume.screening_result = result
     resume.screening_done   = True
     resume.save(update_fields=["screening_result", "screening_done"])
-    return result 
+    return result
