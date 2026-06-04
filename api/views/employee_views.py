@@ -12,7 +12,9 @@ from ..serializers import (
     EmployeeRecruiterSerializer,
 )
 from ..utils import is_admin, is_recruiter
+import logging
 
+logger = logging.getLogger(__name__)
 
 class EmployeeListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -46,7 +48,9 @@ class EmployeeListCreateView(APIView):
         serializer = EmployeeCreateSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+            logger.info("Employee created successfully")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        logger.warning("Failed to create employee")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -93,7 +97,9 @@ class EmployeeDetailView(APIView):
         serializer = EmployeeSerializer(emp, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Employee updated successfully: {emp.first_name} {emp.last_name}")
             return Response(serializer.data)
+        logger.warning("Failed to update employee")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
@@ -104,6 +110,7 @@ class EmployeeDetailView(APIView):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         emp.is_active = False
         emp.save()
+        logger.info(f"Employee deactivated: {emp.first_name} {emp.last_name}")
         return Response({"detail": "Employee deactivated."}, status=status.HTTP_200_OK)
 
 
@@ -120,4 +127,5 @@ class VerifyEmployeeView(APIView):
         employee.is_verified = True
         employee.is_active = True
         employee.save()
+        logger.info(f"Employee verified successfully: {employee.first_name} {employee.last_name}")
         return Response({"message": "Employee verified successfully"}, status=status.HTTP_200_OK)

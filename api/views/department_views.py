@@ -6,7 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import Department
 from ..serializers import DepartmentSerializer
 from ..permissions import IsAdminEmployee  
+import logging
 
+logger = logging.getLogger(__name__)
 
 class DepartmentListCreateView(APIView):
 
@@ -23,7 +25,9 @@ class DepartmentListCreateView(APIView):
         serializer = DepartmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            logger.info("Department created successfully")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        logger.warning("Failed to create department")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -53,7 +57,9 @@ class DepartmentDetailView(APIView):
         serializer = DepartmentSerializer(dept, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Department updated successfully: {dept.name}")
             return Response(serializer.data)
+        logger.warning("Failed to update department")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
@@ -62,4 +68,5 @@ class DepartmentDetailView(APIView):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         dept.is_active = False
         dept.save()
+        logger.info(f"Department deactivated: {dept.name}")
         return Response({"detail": "Department deactivated."}, status=status.HTTP_200_OK)

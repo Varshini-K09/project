@@ -6,7 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import Role, Skill
 from ..serializers import RoleSerializer, SkillSerializer
 from ..permissions import IsAdminEmployee  # ✅ replaced is_admin import
+import logging
 
+logger = logging.getLogger(__name__)
 
 class RoleListCreateView(APIView):
 
@@ -17,13 +19,16 @@ class RoleListCreateView(APIView):
 
     def get(self, request):
         roles = Role.objects.filter(is_active=True)
+        logger.info("Retrieving list of roles")
         return Response(RoleSerializer(roles, many=True).data)
 
     def post(self, request):
         serializer = RoleSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Role created: {serializer.instance.id}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        logger.warning("Failed to create role")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -53,7 +58,9 @@ class RoleDetailView(APIView):
         serializer = RoleSerializer(role, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Role updated: {serializer.instance.id}")
             return Response(serializer.data)
+        logger.warning("Failed to update role")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -66,13 +73,16 @@ class SkillListCreateView(APIView):
 
     def get(self, request):
         skills = Skill.objects.filter(is_active=True)
+        logger.info("Retrieving list of skills")
         return Response(SkillSerializer(skills, many=True).data)
 
     def post(self, request):
         serializer = SkillSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Skill created: {serializer.instance.id}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        logger.warning("Failed to create skill")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -102,5 +112,7 @@ class SkillDetailView(APIView):
         serializer = SkillSerializer(skill, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Skill updated: {serializer.instance.id}")
             return Response(serializer.data)
+        logger.warning("Failed to update skill")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

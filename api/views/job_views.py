@@ -3,7 +3,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from ..models import Requirement
 from ..serializers import JobSerializer
+import logging
 
+logger = logging.getLogger(__name__)
 
 class JobListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -19,6 +21,7 @@ class JobListView(generics.ListAPIView):
         department = self.request.query_params.get("department")
         if department:
             qs = qs.filter(department__department_name=department)
+        logger.info(f"Retrieving job listings for department: {department}")
         return qs
 
 

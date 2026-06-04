@@ -12,8 +12,10 @@ from rest_framework.permissions import IsAuthenticated
 from ..models import Resume
 from ..serializers import ResumeSerializer
 from ..screening import screen_resume, _extract_text_from_pdf, extract_candidate_info
-from ..utils import is_admin, is_recruiter
+from ..utils import is_admin, is_recruiter,_is_hr
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ResumeListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -34,6 +36,7 @@ class ResumeListCreateView(APIView):
         if req_id:
             qs = qs.filter(requirement_id=req_id)
 
+        logger.info(f"Retrieving resumes for requirement: {req_id}")
         return Response(ResumeSerializer(qs.order_by("-created_at"), many=True, context={"request": request}).data)
 
     def post(self, request):
@@ -45,10 +48,12 @@ class ResumeListCreateView(APIView):
         serializer = ResumeSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             resume = serializer.save(uploaded_by=request.user, is_active=True)
+            logger.info(f"Resume created successfully: {resume.id}")
             return Response(
                 ResumeSerializer(resume, context={"request": request}).data,
                 status=status.HTTP_201_CREATED,
             )
+        logger.warning("Failed to create resume")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -79,6 +84,7 @@ class ResumeDetailView(APIView):
         if obj.resume_file and os.path.isfile(obj.resume_file.path):
             os.remove(obj.resume_file.path)
         obj.delete()
+        logger.info(f"Resume deleted: {obj.id}")
         return Response({"detail": "Resume removed."}, status=status.HTTP_200_OK)
 
 
@@ -94,6 +100,7 @@ class ResumeScreenView(APIView):
             ).get(pk=pk)
         except Resume.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        logger.info(f"Screening resume: {resume.id}")
         return Response(screen_resume(resume), status=status.HTTP_200_OK)
 
 
@@ -129,12 +136,6 @@ VALID_STAGES = {
     "selected",
     "rejected",
 }
-
-
-def _is_hr(employee):
-    """Return True if the employee's role is 'hr'."""
-    role = (getattr(employee.role, "role_name", "") or "").lower()
-    return role == "hr"
 
 
 def _can_move_cards(employee):
@@ -177,7 +178,7 @@ class ResumeStageUpdateView(APIView):
 
         resume.stage = new_stage
         resume.save(update_fields=["stage", "updated_at"])
-
+        logger.info(f"Resume stage updated: {resume.id}")
         return Response(
             {
                 "detail": "Stage updated.",

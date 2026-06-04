@@ -7,7 +7,9 @@ from ..models import Interview
 from ..serializers import InterviewSerializer, InterviewPublicSerializer
 from ..email_utils import send_interview_invite
 from ..utils import is_admin, is_recruiter
+import logging
 
+logger = logging.getLogger(__name__)
 
 class InterviewListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -39,7 +41,9 @@ class InterviewListCreateView(APIView):
             interview = serializer.save(scheduled_by=request.user)
             if request.data.get("send_email", False):
                 send_interview_invite(interview)
+            logger.info(f"Interview created successfully: {interview.id}")
             return Response(InterviewSerializer(interview).data, status=status.HTTP_201_CREATED)
+        logger.warning("Failed to create interview")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -73,7 +77,9 @@ class InterviewDetailView(APIView):
         serializer = InterviewSerializer(obj, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            logger.info(f"Interview updated successfully: {obj.id}")
             return Response(serializer.data)
+        logger.warning("Failed to update interview")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # def delete(self, request, pk):
@@ -101,7 +107,7 @@ class InterviewDetailView(APIView):
             )
 
         obj.delete()
-
+        logger.info(f"Interview deleted permanently: {obj.id}")
         return Response(
             {"detail": "Interview deleted permanently."},
             status=status.HTTP_200_OK
