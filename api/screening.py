@@ -4,6 +4,45 @@ import re
 
 from django.conf import settings
 
+# ── Windows binary paths ───────────────────────────────────────────────────
+TESSERACT_PATH = r"C:\Users\VarshiniKatukojwala\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+POPPLER_PATH   = r"C:\Users\VarshiniKatukojwala\Downloads\Release-26.02.0-0\poppler-26.02.0\Library\bin"
+
+
+def _ocr_pdf(file_field) -> str:
+    """
+    Fallback for scanned PDFs — converts each page to an image and runs OCR.
+    Requires: pdf2image, pytesseract, Pillow
+    """
+    try:
+        import pytesseract
+        from pdf2image import convert_from_bytes
+
+        pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+
+        file_field.seek(0)
+        pdf_bytes = file_field.read()
+
+        images = convert_from_bytes(pdf_bytes, dpi=300, poppler_path=POPPLER_PATH)
+
+        extracted_pages = []
+        for i, image in enumerate(images):
+            page_text = pytesseract.image_to_string(image, lang="eng")
+            extracted_pages.append(page_text)
+            print(f"DEBUG OCR: page {i+1} extracted {len(page_text)} chars")
+
+        full_text = "\n".join(extracted_pages).strip()
+
+        if not full_text:
+            return "[OCR completed but no text found — check image quality]"
+
+        return full_text[:12_000]
+
+    except ImportError as e:
+        return f"[OCR unavailable: missing library — {e}]"
+    except Exception as exc:
+        return f"[OCR extraction failed: {exc}]"
+
 
 def _extract_text_from_pdf(file_field) -> str:
     try:
@@ -11,7 +50,16 @@ def _extract_text_from_pdf(file_field) -> str:
         file_field.seek(0)
         reader = pypdf.PdfReader(file_field)
         pages  = [p.extract_text() or "" for p in reader.pages]
-        return "\n".join(pages)[:12_000]  # cap at ~12k chars
+        text   = "\n".join(pages).strip()
+
+        if len(text) >= 100:
+            print("DEBUG: Digital PDF detected, using pypdf extraction.")
+            return text[:12_000]
+
+        # Too little text — likely a scanned PDF
+        print("DEBUG: Low text yield, switching to OCR fallback...")
+        return _ocr_pdf(file_field)
+
     except Exception as exc:
         return f"[PDF extraction failed: {exc}]"
 
@@ -55,7 +103,7 @@ RESUME:
         print(f"DEBUG extract_candidate_info SUCCESS: {result}")
         return result
     except Exception as e:
-        print(f"DEBUG extract_candidate_info ERROR: {e}")  # ← added
+        print(f"DEBUG extract_candidate_info ERROR: {e}")
         return {"candidate_name": "Unknown", "candidate_email": "", "candidate_phone": ""}
 
 
