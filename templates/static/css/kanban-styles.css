@@ -1,0 +1,356 @@
+/* ================================================================
+   kanban-styles.css  —  Swimlane Kanban board
+   Stages = vertical rows  |  Candidates = horizontal cards per row
+   ================================================================ */
+
+/* ── Kanban view container ──────────────────────────────────────── */
+#view-kanban.active {
+    display: flex !important;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────── */
+.kb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0 14px 0;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.kb-toolbar select,
+.kb-toolbar input {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text, #1e293b);
+    background: var(--surface, #fff);
+    outline: none;
+}
+
+.kb-toolbar select:focus,
+.kb-toolbar input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+}
+
+#kbRoleBadge,
+.kb-info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ede9fe;
+    color: #4f46e5;
+    white-space: nowrap;
+}
+
+/* ── Board wrapper: vertical scroll for the swimlanes ───────────── */
+.kanban-wrap,
+#kanbanBoard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 16px;
+    width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
+}
+
+.kanban-wrap::-webkit-scrollbar,
+#kanbanBoard::-webkit-scrollbar       { width: 5px; }
+.kanban-wrap::-webkit-scrollbar-track,
+#kanbanBoard::-webkit-scrollbar-track { background: transparent; }
+.kanban-wrap::-webkit-scrollbar-thumb,
+#kanbanBoard::-webkit-scrollbar-thumb { background: #dde1e7; border-radius: 3px; }
+
+/* ── Each stage = a full-width swimlane row ──────────────────────── */
+.kb-col {
+    width: 100%;
+    max-width: 100%;
+    flex-shrink: 0;
+    background: #f4f5f7;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    transition: background .15s;
+}
+
+.kb-col.drag-over {
+    background: #eef2ff;
+    outline: 2px dashed #6366f1;
+    outline-offset: -2px;
+}
+
+/* ── Swimlane header ─────────────────────────────────────────────── */
+.kb-col-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e8eaed;
+    border-left: 4px solid transparent;
+    border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+    background: #f4f5f7;
+}
+
+.kb-col[data-stage="applied"]             .kb-col-head { border-left-color: #6366f1; }
+.kb-col[data-stage="screening"]           .kb-col-head { border-left-color: #f59e0b; }
+.kb-col[data-stage="shortlisted"]         .kb-col-head { border-left-color: #3b82f6; }
+.kb-col[data-stage="interview_scheduled"] .kb-col-head { border-left-color: #8b5cf6; }
+.kb-col[data-stage="selected"]            .kb-col-head { border-left-color: #22c55e; }
+.kb-col[data-stage="rejected"]            .kb-col-head { border-left-color: #ef4444; }
+
+.kb-col-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text, #1e293b);
+}
+
+.kb-dot  { display: none; }
+
+.kb-count {
+    background: #6366f1;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    min-width: 22px;
+    text-align: center;
+}
+
+/* ── Card list: horizontal scroll inside each lane ───────────────── */
+.kb-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-height: 120px;
+    align-items: flex-start;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+.kb-list::-webkit-scrollbar        { height: 4px; }
+.kb-list::-webkit-scrollbar-track  { background: transparent; }
+.kb-list::-webkit-scrollbar-thumb  { background: #d1d5db; border-radius: 2px; }
+
+/* ── Empty placeholder ──────────────────────────────────────────── */
+.kb-empty {
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+    padding: 20px 28px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1.5px dashed #dde1e7;
+    align-self: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Candidate card ──────────────────────────────────────────────── */
+.kb-card {
+    flex: 0 0 210px;
+    min-width: 210px;
+    max-width: 210px;
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    cursor: pointer;
+    transition: box-shadow .15s, transform .1s;
+    border: 1px solid #e8eaed;
+    user-select: none;
+}
+
+.kb-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    transform: translateY(-2px);
+}
+
+.kb-card[draggable="true"]        { cursor: grab; }
+.kb-card[draggable="true"]:active,
+.kb-card.dragging {
+    cursor: grabbing;
+    opacity: .55;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    transform: rotate(1.5deg) scale(1.02);
+}
+
+.kb-card.readonly { cursor: pointer; }
+
+.kb-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text, #1e293b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kb-card-req {
+    font-size: 11.5px;
+    color: #64748b;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kb-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ── Score badge ─────────────────────────────────────────────────── */
+.kb-score {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+.kb-score.high { background: #dcfce7; color: #15803d; }
+.kb-score.mid  { background: #fef9c3; color: #b45309; }
+.kb-score.low  { background: #fee2e2; color: #b91c1c; }
+.kb-score.none { background: #f1f5f9; color: #94a3b8; }
+
+/* ── Email chip ──────────────────────────────────────────────────── */
+.kb-email-chip {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+}
+.kb-email-chip.sent    { background: #dcfce7; color: #16a34a; }
+.kb-email-chip.pending { background: #fef3c7; color: #d97706; }
+
+/* ── Detail panel modal ──────────────────────────────────────────── */
+.kb-detail-panel { max-width: 520px; }
+
+.kb-detail-hero {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+    color: #fff;
+}
+
+.kb-detail-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.kb-detail-name { font-size: 17px; font-weight: 700; color: #fff; }
+.kb-detail-sub  { font-size: 12.5px; color: rgba(255,255,255,.8); margin-top: 2px; }
+
+.kb-stage-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.kb-stage-select-wrap label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.kb-stage-select {
+    flex: 1;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    color: #1e293b;
+}
+
+.kb-screening-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.kb-screening-score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.kb-score-big      { font-size: 20px; font-weight: 800; }
+.kb-score-big.high { color: #15803d; }
+.kb-score-big.mid  { color: #b45309; }
+.kb-score-big.low  { color: #b91c1c; }
+.kb-score-big.none { color: #94a3b8; }
+
+.kb-score-bar-bg { background: #e2e8f0; border-radius: 4px; height: 6px; margin-bottom: 10px; }
+
+.kb-score-bar-fill      { height: 6px; border-radius: 4px; transition: width .4s ease; }
+.kb-score-bar-fill.high { background: #22c55e; }
+.kb-score-bar-fill.mid  { background: #f59e0b; }
+.kb-score-bar-fill.low  { background: #ef4444; }
+
+.kb-screening-summary { font-size: 12.5px; color: #64748b; line-height: 1.55; }
+
+.kb-detail-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.kb-detail-field      { background: #f8fafc; border-radius: 6px; padding: 10px 12px; }
+.kb-detail-field.full { grid-column: span 2; }
+
+.kdf-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.kdf-value { font-size: 13px; color: #1e293b; font-weight: 500; }
+
+.jd-modal { max-width: 680px; }
