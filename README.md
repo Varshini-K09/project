@@ -51,11 +51,8 @@ Master data management for organization structure, access roles, and the skill l
 Confirmation email sent automatically when a candidate is scheduled, via SMTP (Mailtrap in dev).
 ![Interview Email](./docs/screenshots/interview-email.png)
 
-### SharePoint Sync (Shortlisted Candidates)
-> Screenshot pending — add `sharepoint-sync.png` to `docs/screenshots/` and I'll wire it in.
-
 ### Database Schema
-> Screenshot pending — export your ER diagram as PNG (e.g. from dbdiagram.io, drawio, or pgAdmin), add it as `docs/screenshots/er-diagram.png`, and I'll wire it in.
+![ER Diagram](./docs/screenshots/er-diagram.png)
 
 ---
 
@@ -95,7 +92,9 @@ Confirmation email sent automatically when a candidate is scheduled, via SMTP (M
 
 ### Database Schema
 
-Core entities: Employee, Department, Role, Skill, Requirement, Resume, and Interview. *(ER diagram screenshot pending — add `er-diagram.png` to `docs/screenshots/`.)*
+The ER diagram below shows the core entities — Employee, Department, Role, Skill, Requirement, Resume, and Interview — and how they relate.
+
+![ER Diagram](./docs/screenshots/er-diagram.png)
 
 ### RAG Resume Matching Pipeline
 
